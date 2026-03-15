@@ -1,0 +1,33 @@
+name: Cyber Intel Bots
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-bots:
+    runs-on: ubuntu-latest
+
+    env:
+      RED_TOKEN: ${{ secrets.RED_TOKEN }}
+      RED_CHAT: ${{ secrets.RED_CHAT }}
+
+      BLUE_TOKEN: ${{ secrets.BLUE_TOKEN }}
+      BLUE_CHAT: ${{ secrets.BLUE_CHAT }}
+
+      INTEL_TOKEN: ${{ secrets.INTEL_TOKEN }}
+      INTEL_CHAT: ${{ secrets.INTEL_CHAT }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - run: pip install -r requirements.txt
+
+      - run: python bots/redteam.py
+      - run: python bots/blueteam.py
+      - run: python bots/threatintel.py
