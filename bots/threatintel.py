@@ -1,16 +1,13 @@
 import requests
 import os
+import feedparser
 
-from feeds.apt_feed import get_apt_news
-from feeds.exploit_feed import get_exploits
-from feeds.malware_feed import get_malware
-
-TOKEN=os.getenv("INTEL_TOKEN")
-CHAT=os.getenv("INTEL_CHAT")
-
-url=f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+TOKEN = os.getenv("INTEL_TOKEN")
+CHAT = os.getenv("INTEL_CHAT")
 
 def send(msg):
+
+    url=f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
     requests.post(url,data={
         "chat_id":CHAT,
@@ -18,37 +15,76 @@ def send(msg):
     })
 
 
-for news in get_apt_news():
+# -------------------
+# APT / Threat News
+# -------------------
 
-    msg=f"""
+feeds=[
+"https://www.cisa.gov/cybersecurity-advisories/all.xml",
+"https://feeds.feedburner.com/TheHackersNews"
+]
+
+for f in feeds:
+
+    data=feedparser.parse(f)
+
+    for entry in data.entries[:3]:
+
+        msg=f"""
 🌎 Threat Intel
 
-{news['title']}
+{entry.title}
 
-{news['link']}
+{entry.link}
 """
-    send(msg)
+
+        send(msg)
 
 
-for e in get_exploits():
+# -------------------
+# Exploits
+# -------------------
+
+exp=feedparser.parse("https://www.exploit-db.com/rss.xml")
+
+for e in exp.entries[:3]:
 
     msg=f"""
 💣 New Exploit
 
-{e['title']}
+{e.title}
 
-{e['link']}
+{e.link}
 """
+
     send(msg)
 
 
-for m in get_malware():
+# -------------------
+# Malware
+# -------------------
 
-    msg=f"""
+try:
+
+    url="https://mb-api.abuse.ch/api/v1/"
+
+    payload={"query":"get_recent"}
+
+    r=requests.post(url,data=payload)
+
+    data=r.json()
+
+    for sample in data["data"][:3]:
+
+        msg=f"""
 🦠 Malware Sample
 
-Family: {m['family']}
-Hash: {m['hash']}
+Family: {sample["signature"]}
+Hash: {sample["sha256_hash"]}
 """
 
-    send(msg)
+        send(msg)
+
+except:
+
+    send("⚠ Malware feed error")
