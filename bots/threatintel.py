@@ -1,27 +1,57 @@
-import feedparser
 import requests
 import os
 
-TOKEN = os.getenv("INTEL_TOKEN")
-CHAT = os.getenv("INTEL_CHAT")
+from feeds.apt_feed import get_apt_news
+from feeds.exploit_feed import get_exploits
+from feeds.malware_feed import get_malware
 
-feed = feedparser.parse("https://feeds.feedburner.com/TheHackersNews")
+TOKEN=os.getenv("INTEL_TOKEN")
+CHAT=os.getenv("INTEL_CHAT")
 
-for entry in feed.entries[:5]:
+url=f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
-    title = entry.title
-    link = entry.link
+def send(msg):
 
-    msg = f"""
-🌎 Threat Intelligence
+    requests.post(url,data={
+        "chat_id":CHAT,
+        "text":msg
+    })
 
-{title}
 
-Read more:
-{link}
+# APT / CISA
+for news in get_apt_news():
+
+    msg=f"""
+🌎 Threat Intel
+
+{news['title']}
+
+{news['link']}
+"""
+    send(msg)
+
+
+# Exploits
+for e in get_exploits():
+
+    msg=f"""
+💣 New Exploit
+
+{e['title']}
+
+{e['link']}
+"""
+    send(msg)
+
+
+# Malware
+for m in get_malware():
+
+    msg=f"""
+🦠 Malware Sample
+
+Family: {m['family']}
+Hash: {m['hash']}
 """
 
-    requests.post(
-        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-        data={"chat_id": CHAT, "text": msg}
-    )
+    send(msg)
