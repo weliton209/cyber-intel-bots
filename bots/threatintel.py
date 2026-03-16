@@ -18,7 +18,6 @@ def send(msg):
     })
 
 
-# APT / CISA
 for news in get_apt_news():
 
     msg=f"""
@@ -31,7 +30,6 @@ for news in get_apt_news():
     send(msg)
 
 
-# Exploits
 for e in get_exploits():
 
     msg=f"""
@@ -44,7 +42,6 @@ for e in get_exploits():
     send(msg)
 
 
-# Malware
 for m in get_malware():
 
     msg=f"""
