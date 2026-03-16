@@ -12,22 +12,30 @@ jobs:
     env:
       RED_TOKEN: ${{ secrets.RED_TOKEN }}
       RED_CHAT: ${{ secrets.RED_CHAT }}
-
       BLUE_TOKEN: ${{ secrets.BLUE_TOKEN }}
       BLUE_CHAT: ${{ secrets.BLUE_CHAT }}
-
       INTEL_TOKEN: ${{ secrets.INTEL_TOKEN }}
       INTEL_CHAT: ${{ secrets.INTEL_CHAT }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - run: python bots/redteam.py
-      - run: python bots/blueteam.py
-      - run: python bots/threatintel.py
+      - name: Run Red Team Bot
+        run: python bots/redteam.py || true
+
+      - name: Run Blue Team Bot
+        run: python bots/blueteam.py || true
+
+      - name: Run Threat Intel Bot
+        run: python bots/threatintel.py || true
