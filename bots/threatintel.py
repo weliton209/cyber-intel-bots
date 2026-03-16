@@ -1,12 +1,27 @@
+import feedparser
 import requests
 import os
 
-TOKEN=os.getenv("INTEL_TOKEN")
-CHAT=os.getenv("INTEL_CHAT")
+TOKEN = os.getenv("INTEL_TOKEN")
+CHAT = os.getenv("INTEL_CHAT")
 
-msg="🌎 Threat Intelligence Update\nNova campanha APT detectada"
+feed = feedparser.parse("https://feeds.feedburner.com/TheHackersNews")
 
-requests.post(
-f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-data={"chat_id":CHAT,"text":msg}
-)
+for entry in feed.entries[:5]:
+
+    title = entry.title
+    link = entry.link
+
+    msg = f"""
+🌎 Threat Intelligence
+
+{title}
+
+Read more:
+{link}
+"""
+
+    requests.post(
+        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+        data={"chat_id": CHAT, "text": msg}
+    )
