@@ -6,9 +6,43 @@ CHAT = os.getenv("INTEL_CHAT")
 
 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
-r = requests.post(url, data={
-    "chat_id": CHAT,
-    "text": "🚀 Radar TESTE"
-})
+def send(msg):
 
-print(r.text)
+    requests.post(url,data={
+        "chat_id": CHAT,
+        "text": msg
+    })
+
+send("🚀 Radar started")
+
+
+# TESTE CVE
+try:
+
+    from modules.cve_exploit import get_exploitable_cves
+
+    send("Testing CVE module")
+
+    for c in get_exploitable_cves()[:2]:
+
+        send(f"CVE test: {c['id']}")
+
+except Exception as e:
+
+    send(f"CVE ERROR: {e}")
+
+
+# TESTE APT
+try:
+
+    from modules.apt_campaigns import get_apt_campaigns
+
+    send("Testing APT module")
+
+    for a in get_apt_campaigns()[:2]:
+
+        send(f"APT: {a['title']}")
+
+except Exception as e:
+
+    send(f"APT ERROR: {e}")
