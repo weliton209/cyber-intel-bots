@@ -17,6 +17,28 @@ HISTORY_FILE = "sent_alerts.txt"
 
 
 # -------------------
+# TELEGRAM SEND
+# -------------------
+
+def send(msg):
+
+    try:
+
+        requests.post(
+            url,
+            data={
+                "chat_id": CHAT,
+                "text": msg
+            },
+            timeout=10
+        )
+
+    except Exception as e:
+
+        print("Telegram error:", e)
+
+
+# -------------------
 # HISTORY SYSTEM
 # -------------------
 
@@ -38,26 +60,9 @@ def save_history(item):
 history = load_history()
 
 
-# -------------------
-# TELEGRAM SEND
-# -------------------
+# TEST MESSAGE
 
-def send(msg):
-
-    try:
-
-        requests.post(
-            url,
-            data={
-                "chat_id": CHAT,
-                "text": msg
-            },
-            timeout=10
-        )
-
-    except Exception as e:
-
-        print("Telegram error:", e)
+send("✅ Radar started")
 
 
 # -------------------
