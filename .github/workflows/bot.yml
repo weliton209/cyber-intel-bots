@@ -2,7 +2,7 @@ name: Cyber Threat Radar
 
 on:
   schedule:
-    - cron: "0 * * * *"   # roda a cada 1 hora
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -27,5 +27,7 @@ jobs:
           pip install requests
           pip install feedparser
 
-      - name: Run Radar
-        run: python bots/radar.py
+      - name: Run radar
+        run: |
+          echo "Running radar..."
+          python bots/radar.py || true
