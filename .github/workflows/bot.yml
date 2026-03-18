@@ -1,33 +1,34 @@
-name: Cyber Threat Radar
+name: run-bots
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 jobs:
-  run-radar:
+  run:
     runs-on: ubuntu-latest
 
-    env:
-      INTEL_TOKEN: ${{ secrets.INTEL_TOKEN }}
-      INTEL_CHAT: ${{ secrets.INTEL_CHAT }}
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          pip install requests
-          pip install feedparser
+      - run: pip install -r requirements.txt
 
-      - name: Run radar
-        run: |
-          echo "Running radar..."
-          python bots/radar.py || true
+      - run: python bots/threatintel.py
+        env:
+          INTEL_TOKEN: ${{ secrets.INTEL_TOKEN }}
+          INTEL_CHAT: ${{ secrets.INTEL_CHAT }}
+
+      - run: python bots/redteam.py
+        env:
+          RED_TOKEN: ${{ secrets.RED_TOKEN }}
+          RED_CHAT: ${{ secrets.RED_CHAT }}
+
+      - run: python bots/blueteam.py
+        env:
+          BLUE_TOKEN: ${{ secrets.BLUE_TOKEN }}
+          BLUE_CHAT: ${{ secrets.BLUE_CHAT }}
