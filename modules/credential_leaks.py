@@ -6,7 +6,7 @@ TARGETS = [
     "azulseguros",
     "redbull",
     "nba",
-    "btg"
+    "cloud"
 ]
 
 KEYWORDS = [
