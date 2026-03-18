@@ -1,90 +1,37 @@
-import requests
+import sys
 import os
-import feedparser
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import requests
+
+from modules.cve_exploit import get_exploitable_cves
+from modules.apt_campaigns import get_apt_campaigns
+from modules.credential_leaks import get_leaks
+from modules.malware_c2 import get_c2
 
 TOKEN = os.getenv("INTEL_TOKEN")
 CHAT = os.getenv("INTEL_CHAT")
 
+url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
 def send(msg):
+    requests.post(url, data={"chat_id": CHAT, "text": msg}, timeout=10)
 
-    url=f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+send("🧠 Threat Intel Radar ON")
 
-    requests.post(url,data={
-        "chat_id":CHAT,
-        "text":msg
-    })
+# CVE
+for c in get_exploitable_cves()[:5]:
+    send(f"🚨 CVE Exploited\n{c['id']}\n{c['desc']}")
 
+# APT
+for a in get_apt_campaigns()[:5]:
+    send(f"🎯 APT Campaign\n{a['title']}\n{a['link']}")
 
-# -------------------
-# APT / Threat News
-# -------------------
+# Leaks
+for l in get_leaks():
+    send(f"🔓 Data Leak\n{l['name']}\nDomain: {l['domain']}")
 
-feeds=[
-"https://www.cisa.gov/cybersecurity-advisories/all.xml",
-"https://feeds.feedburner.com/TheHackersNews"
-]
-
-for f in feeds:
-
-    data=feedparser.parse(f)
-
-    for entry in data.entries[:3]:
-
-        msg=f"""
-🌎 Threat Intel
-
-{entry.title}
-
-{entry.link}
-"""
-
-        send(msg)
-
-
-# -------------------
-# Exploits
-# -------------------
-
-exp=feedparser.parse("https://www.exploit-db.com/rss.xml")
-
-for e in exp.entries[:3]:
-
-    msg=f"""
-💣 New Exploit
-
-{e.title}
-
-{e.link}
-"""
-
-    send(msg)
-
-
-# -------------------
 # Malware
-# -------------------
-
-try:
-
-    url="https://mb-api.abuse.ch/api/v1/"
-
-    payload={"query":"get_recent"}
-
-    r=requests.post(url,data=payload)
-
-    data=r.json()
-
-    for sample in data["data"][:3]:
-
-        msg=f"""
-🦠 Malware Sample
-
-Family: {sample["signature"]}
-Hash: {sample["sha256_hash"]}
-"""
-
-        send(msg)
-
-except:
-
-    send("⚠ Malware feed error")
+for m in get_c2()[:5]:
+    send(f"🦠 Malware C2\nFamily: {m['family']}\nHash: {m['hash']}")
