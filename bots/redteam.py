@@ -9,7 +9,7 @@ from modules.cve_exploit import get_exploitable_cves
 
 TOKEN = os.getenv("RED_TOKEN")
 CHAT = os.getenv("RED_CHAT")
-
+send("🚀 TESTE RED TEAM OK")
 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
 def send(msg):
