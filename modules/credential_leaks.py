@@ -1,8 +1,26 @@
 import feedparser
 
+# 🔥 SEUS ALVOS (bug bounty / interesse)
+TARGETS = [
+    "portoseguro",
+    "azulseguros",
+    "redbull",
+    "nba",
+    "btg"
+]
+
+KEYWORDS = [
+    "breach",
+    "leak",
+    "database",
+    "dump",
+    "credentials",
+    "exposed"
+]
+
 FEEDS = [
-    "https://feeds.feedburner.com/TheHackersNews",
     "https://www.bleepingcomputer.com/feed/",
+    "https://feeds.feedburner.com/TheHackersNews"
 ]
 
 def get_leaks():
@@ -17,12 +35,17 @@ def get_leaks():
 
             title = entry.title.lower()
 
-            # filtro focado em vazamento
-            if any(word in title for word in ["breach", "leak", "data leak", "exposed"]):
+            # 🔎 filtro de leak
+            if not any(k in title for k in KEYWORDS):
+                continue
 
-                results.append({
-                    "name": entry.title,
-                    "domain": entry.link
-                })
+            # 🎯 filtro de TARGET
+            if not any(t in title for t in TARGETS):
+                continue
+
+            results.append({
+                "name": entry.title,
+                "domain": entry.link
+            })
 
     return results
