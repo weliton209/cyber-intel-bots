@@ -1,25 +1,28 @@
+import feedparser
 
-import requests
+FEEDS = [
+    "https://feeds.feedburner.com/TheHackersNews",
+    "https://www.bleepingcomputer.com/feed/",
+]
 
 def get_leaks():
 
-    url="https://haveibeenpwned.com/api/v3/breaches"
+    results = []
 
-    headers={
-        "user-agent":"intel-bot"
-    }
+    for feed in FEEDS:
 
-    r=requests.get(url,headers=headers)
+        f = feedparser.parse(feed)
 
-    data=r.json()
+        for entry in f.entries[:10]:
 
-    leaks=[]
+            title = entry.title.lower()
 
-    for breach in data[:5]:
+            # filtro focado em vazamento
+            if any(word in title for word in ["breach", "leak", "data leak", "exposed"]):
 
-        leaks.append({
-            "name":breach["Name"],
-            "domain":breach["Domain"]
-        })
+                results.append({
+                    "name": entry.title,
+                    "domain": entry.link
+                })
 
-    return leaks
+    return results
