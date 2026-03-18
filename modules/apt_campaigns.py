@@ -1,18 +1,23 @@
 import feedparser
 
+FEEDS = [
+    "https://www.securelist.com/feed/",
+    "https://unit42.paloaltonetworks.com/feed/",
+]
+
 def get_apt_campaigns():
 
-    feed="https://www.cisa.gov/cybersecurity-advisories/all.xml"
+    results = []
 
-    data=feedparser.parse(feed)
+    for feed in FEEDS:
 
-    campaigns=[]
+        f = feedparser.parse(feed)
 
-    for entry in data.entries[:5]:
+        for entry in f.entries[:5]:
 
-        campaigns.append({
-            "title":entry.title,
-            "link":entry.link
-        })
+            results.append({
+                "title": entry.title,
+                "link": entry.link
+            })
 
-    return campaigns
+    return results
