@@ -32,3 +32,12 @@ jobs:
         env:
           BLUE_TOKEN: ${{ secrets.BLUE_TOKEN }}
           BLUE_CHAT: ${{ secrets.BLUE_CHAT }}
+
+      # 🔥 salva histórico (ESSENCIAL)
+      - name: Save history
+        run: |
+          git config --global user.name "bot"
+          git config --global user.email "bot@bot.com"
+          git add sent_alerts.txt
+          git commit -m "update history" || echo "no changes"
+          git push
