@@ -3,6 +3,7 @@ import feedparser
 FEEDS = [
     "https://www.securelist.com/feed/",
     "https://unit42.paloaltonetworks.com/feed/",
+    "https://www.mandiant.com/resources/blog/rss.xml"
 ]
 
 def get_apt_campaigns():
