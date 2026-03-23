@@ -6,7 +6,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import requests
 
 from modules.recon_subdomains import get_subdomains
-from modules.recon_js import get_js_files
+from modules.recon_alive import check_alive
+from modules.recon_scan import run_scan
 from modules.history import load_history, save_history, gen_id
 
 TOKEN = os.getenv("RED_TOKEN")
@@ -16,12 +17,12 @@ url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
 
 def send(msg):
-    requests.post(url, data={"chat_id": CHAT, "text": msg}, timeout=10)
+    requests.post(url, data={"chat_id": CHAT, "text": msg}, timeout=15)
 
 
 history = load_history()
 
-send("🔴 Recon Bot ON")
+send("🔴 Recon + Scan ON")
 
 
 with open("targets.txt") as f:
@@ -30,55 +31,49 @@ with open("targets.txt") as f:
 
 for t in targets:
 
+    # -------------------
+    # SUBDOMAIN DISCOVERY
+    # -------------------
     subs = get_subdomains(t)
-    js_files = get_js_files(t)
 
-    new_subs = []
-    new_js = []
+    if not subs:
+        continue
 
     # -------------------
-    # SUBDOMAINS
+    # ALIVE CHECK
     # -------------------
-    for s in subs:
+    alive = check_alive(subs[:30])  # limita
 
-        uid = gen_id(s)
+    if not alive:
+        continue
+
+    # -------------------
+    # SCAN
+    # -------------------
+    findings = run_scan(alive[:10])  # limita pra não travar
+
+    new_findings = []
+
+    for fnd in findings:
+
+        uid = gen_id(fnd)
 
         if uid in history:
             continue
 
-        new_subs.append(s)
+        new_findings.append(fnd)
         save_history(uid)
 
     # -------------------
-    # JS
+    # OUTPUT
     # -------------------
-    for js in js_files:
-
-        uid = gen_id(js)
-
-        if uid in history:
-            continue
-
-        new_js.append(js)
-        save_history(uid)
-
-    # -------------------
-    # OUTPUT ORGANIZADO
-    # -------------------
-
-    if not new_subs and not new_js:
+    if not new_findings:
         continue
 
     msg = f"🎯 TARGET: {t}\n\n"
+    msg += "🚨 Findings:\n"
 
-    if new_subs:
-        msg += f"🌐 Subdomains ({len(new_subs)} novos)\n"
-        for s in new_subs[:5]:
-            msg += f"- {s}\n"
-
-    if new_js:
-        msg += f"\n🧪 JS ({len(new_js)} encontrados)\n"
-        for j in new_js[:5]:
-            msg += f"- {j}\n"
+    for fnd in new_findings[:5]:
+        msg += f"- {fnd}\n"
 
     send(msg)
