@@ -35,6 +35,7 @@ with open("targets.txt") as f:
 for t in targets:
 
     subs = get_subdomains(t)
+    subs = filter_subdomains(subs)
 
     if not subs:
         continue
