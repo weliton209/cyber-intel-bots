@@ -1,35 +1,35 @@
-import feedparser
+import requests
 
-KEYWORDS = [
-    "cyber attack",
-    "ransomware",
-    "breach",
-    "data leak",
-    "hacked"
-]
+def get_news():
 
-FEEDS = [
-    "https://news.google.com/rss/search?q=cyber+attack",
-    "https://www.bleepingcomputer.com/feed/"
-]
-
-def get_attack_news():
+    feeds = [
+        "https://www.cisa.gov/news.xml",
+        "https://feeds.feedburner.com/TheHackersNews",
+    ]
 
     results = []
 
-    for feed in FEEDS:
+    for feed in feeds:
+        try:
+            r = requests.get(feed, timeout=10).text
 
-        f = feedparser.parse(feed)
+            # parse simples
+            items = r.split("<item>")[1:5]
 
-        for entry in f.entries[:10]:
+            for i in items:
+                try:
+                    title = i.split("<title>")[1].split("</title>")[0]
+                    link = i.split("<link>")[1].split("</link>")[0]
 
-            title = entry.title.lower()
+                    results.append({
+                        "title": title,
+                        "link": link
+                    })
 
-            if any(k in title for k in KEYWORDS):
+                except:
+                    continue
 
-                results.append({
-                    "title": entry.title,
-                    "link": entry.link
-                })
+        except:
+            continue
 
-    return results
+    return results[:5]
