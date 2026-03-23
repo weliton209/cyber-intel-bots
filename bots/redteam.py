@@ -6,8 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import requests
 
 from modules.recon_subdomains import get_subdomains, filter_subdomains
-from modules.recon_alive import check_alive
-from modules.recon_js import get_js_files
+from modules.recon_passive_js import get_js_passive
 from modules.recon_endpoints import extract_endpoints
 from modules.filtering import is_high_value
 from modules.history import load_history, save_history, gen_id
@@ -27,7 +26,7 @@ def send(msg):
 
 history = load_history()
 
-send("🔴 Recon Mode ON")
+send("🕶️ Passive Recon ON")
 
 
 with open("targets.txt") as f:
@@ -48,29 +47,21 @@ for t in targets:
     if not subs:
         continue
 
-    alive = check_alive(subs[:30])
-
-    if not alive:
-        continue
-
-    high_value_targets = [a for a in alive if is_high_value(a)]
+    # 🔥 PRIORIZA SEM FAZER REQUISIÇÃO
+    high_value_targets = [s for s in subs if is_high_value(s)]
 
     if not high_value_targets:
-        continue
+        high_value_targets = subs[:10]
 
-    js_files = []
+    # 🔥 JS PASSIVO
+    js_files = get_js_passive(t)
+
     endpoints = []
-
-    for h in high_value_targets[:5]:
-        js = get_js_files(h)
-        js_files.extend(js)
-
-    js_files = list(set(js_files))[:5]
 
     if js_files:
         endpoints = extract_endpoints(js_files)[:10]
 
-    uid = gen_id(t + "recon")
+    uid = gen_id(t + "passive")
 
     if uid in history:
         continue
@@ -79,13 +70,13 @@ for t in targets:
 
     msg = f"🎯 TARGET: {t}\n\n"
 
-    msg += "🔥 High Value Targets:\n"
+    msg += "🔥 Potential Targets:\n"
     for h in high_value_targets[:5]:
         msg += f"- {h}\n"
 
     if js_files:
-        msg += "\n🧪 JS Files:\n"
-        for j in js_files:
+        msg += "\n🧪 JS (Passive):\n"
+        for j in js_files[:5]:
             msg += f"- {j}\n"
 
     if endpoints:
