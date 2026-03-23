@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import requests
 
-from modules.recon_subdomains import get_subdomains
+from modules.recon_subdomains import get_subdomains, filter_subdomains
 from modules.recon_alive import check_alive
 from modules.recon_scan import run_scan
 from modules.recon_js import get_js_files
