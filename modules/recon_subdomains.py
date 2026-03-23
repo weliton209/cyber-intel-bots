@@ -2,6 +2,8 @@ import requests
 
 def get_subdomains(domain):
 
+    import requests
+
     url = f"https://crt.sh/?q=%25.{domain}&output=json"
 
     try:
@@ -15,7 +17,11 @@ def get_subdomains(domain):
 
         name = entry["name_value"]
 
+        # ❌ remove wildcard
+        if "*" in name:
+            continue
+
         if domain in name:
-            results.add(name)
+            results.add(name.strip())
 
     return list(results)
