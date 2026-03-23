@@ -14,3 +14,20 @@ def is_valid_finding(finding):
             return False
 
     return True
+    
+def is_high_value(target):
+
+    keywords = [
+        "login",
+        "auth",
+        "admin",
+        "api",
+        "dashboard",
+        "internal"
+    ]
+
+    for k in keywords:
+        if k in target.lower():
+            return True
+
+    return False
