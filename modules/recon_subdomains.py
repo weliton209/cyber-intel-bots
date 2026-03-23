@@ -71,3 +71,24 @@ def get_subdomains(domain):
     results.update(from_rapiddns(domain))
 
     return list(results)
+
+def filter_subdomains(subs):
+
+    keywords = [
+        "api",
+        "dev",
+        "test",
+        "admin",
+        "auth",
+        "portal",
+        "internal",
+        "app"
+    ]
+
+    filtered = []
+
+    for s in subs:
+        if any(k in s.lower() for k in keywords):
+            filtered.append(s)
+
+    return filtered if filtered else subs[:20]
