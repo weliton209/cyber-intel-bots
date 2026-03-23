@@ -5,10 +5,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import requests
 
-from modules.apt_campaigns import get_apt_campaigns
-from modules.ioc_feed import get_iocs
-from modules.news_attacks import get_attack_news
-from modules.history import load_history, save_history, gen_id
+from modules.intel.apt import get_apt_campaigns
+from modules.intel.leaks import get_leaks
+from modules.intel.malware import get_c2
+from modules.intel.news import get_news
 
 TOKEN = os.getenv("INTEL_TOKEN")
 CHAT = os.getenv("INTEL_CHAT")
