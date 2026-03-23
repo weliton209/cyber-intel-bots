@@ -8,6 +8,7 @@ import requests
 from modules.recon_subdomains import get_subdomains
 from modules.recon_alive import check_alive
 from modules.recon_scan import run_scan
+from modules.filtering import is_valid_finding, is_high_value
 from modules.history import load_history, save_history, gen_id
 
 TOKEN = os.getenv("RED_TOKEN")
@@ -22,7 +23,7 @@ def send(msg):
 
 history = load_history()
 
-send("🔴 Recon + Scan ON")
+send("🔴 Smart Recon ON")
 
 
 with open("targets.txt") as f:
@@ -31,30 +32,30 @@ with open("targets.txt") as f:
 
 for t in targets:
 
-    # -------------------
-    # SUBDOMAIN DISCOVERY
-    # -------------------
     subs = get_subdomains(t)
 
     if not subs:
         continue
 
-    # -------------------
-    # ALIVE CHECK
-    # -------------------
-    alive = check_alive(subs[:30])  # limita
+    alive = check_alive(subs[:30])
 
     if not alive:
         continue
 
-    # -------------------
-    # SCAN
-    # -------------------
-    findings = run_scan(alive[:10])  # limita pra não travar
+    # 🔥 prioriza alvos interessantes
+    high_value_targets = [a for a in alive if is_high_value(a)]
+
+    if not high_value_targets:
+        continue
+
+    findings = run_scan(high_value_targets[:10])
 
     new_findings = []
 
     for fnd in findings:
+
+        if not is_valid_finding(fnd):
+            continue
 
         uid = gen_id(fnd)
 
@@ -64,14 +65,11 @@ for t in targets:
         new_findings.append(fnd)
         save_history(uid)
 
-    # -------------------
-    # OUTPUT
-    # -------------------
     if not new_findings:
         continue
 
     msg = f"🎯 TARGET: {t}\n\n"
-    msg += "🚨 Findings:\n"
+    msg += "🚨 HIGH VALUE FINDINGS:\n\n"
 
     for fnd in new_findings[:5]:
         msg += f"- {fnd}\n"
