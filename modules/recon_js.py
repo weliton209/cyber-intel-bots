@@ -14,10 +14,12 @@ def get_js_files(domain):
 
     for js in js_files:
 
-        # ❌ remove chunks inúteis (Next.js)
-        if "chunks" in js or "_next" in js:
+        if "chunk" in js or "_next" in js:
             continue
+
+        if js.startswith("/"):
+            js = f"https://{domain}{js}"
 
         results.append(js)
 
-    return results
+    return list(set(results))
