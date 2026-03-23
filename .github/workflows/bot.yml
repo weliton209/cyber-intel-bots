@@ -21,21 +21,34 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      # 🔥 INSTALL TOOLS (ANTES DO BOT RED)
+      - name: Install tools
+        run: |
+          sudo apt update
+          sudo apt install -y golang
+          go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+          go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      # 🧠 INTEL
       - run: python bots/threatintel.py
         env:
           INTEL_TOKEN: ${{ secrets.INTEL_TOKEN }}
           INTEL_CHAT: ${{ secrets.INTEL_CHAT }}
 
+      # 🔴 RED (usa httpx + nuclei)
       - run: python bots/redteam.py
         env:
           RED_TOKEN: ${{ secrets.RED_TOKEN }}
           RED_CHAT: ${{ secrets.RED_CHAT }}
 
+      # 🔵 BLUE
       - run: python bots/blueteam.py
         env:
           BLUE_TOKEN: ${{ secrets.BLUE_TOKEN }}
           BLUE_CHAT: ${{ secrets.BLUE_CHAT }}
 
+      # 💾 SAVE HISTORY
       - name: Save history
         run: |
           git config --global user.name "bot"
