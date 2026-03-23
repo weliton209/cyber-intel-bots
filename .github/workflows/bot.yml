@@ -21,13 +21,12 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # 🔥 INSTALL TOOLS (ANTES DO BOT RED)
-      - name: Install tools
+      # 🔥 INSTALL HTTPX (só o necessário)
+      - name: Install httpx
         run: |
           sudo apt update
           sudo apt install -y golang
           go install github.com/projectdiscovery/httpx/cmd/httpx@latest
-          go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
       # 🧠 INTEL
@@ -36,7 +35,7 @@ jobs:
           INTEL_TOKEN: ${{ secrets.INTEL_TOKEN }}
           INTEL_CHAT: ${{ secrets.INTEL_CHAT }}
 
-      # 🔴 RED (usa httpx + nuclei)
+      # 🔴 RED (RECON PURO)
       - run: python bots/redteam.py
         env:
           RED_TOKEN: ${{ secrets.RED_TOKEN }}
