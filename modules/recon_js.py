@@ -10,4 +10,14 @@ def get_js_files(domain):
 
     js_files = re.findall(r'src="(.*?\.js)"', r)
 
-    return js_files
+    results = []
+
+    for js in js_files:
+
+        # ❌ remove chunks inúteis (Next.js)
+        if "chunks" in js or "_next" in js:
+            continue
+
+        results.append(js)
+
+    return results
