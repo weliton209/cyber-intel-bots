@@ -5,11 +5,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import requests
 
-from modules.recon_subdomains import get_subdomains, filter_subdomains
-from modules.recon_passive_js import get_js_passive
-from modules.recon_endpoints import extract_endpoints
-from modules.filtering import is_high_value
-from modules.history import load_history, save_history, gen_id
+from modules.recon.subdomains import get_subdomains, filter_subdomains
+from modules.recon.passive_js import get_js_passive
+from modules.recon.endpoints import extract_endpoints
+
+from modules.core.filtering import is_high_value
+from modules.core.history import load_history, save_history, gen_id
 
 TOKEN = os.getenv("RED_TOKEN")
 CHAT = os.getenv("RED_CHAT")
