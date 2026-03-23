@@ -7,10 +7,9 @@ import requests
 
 from modules.recon_subdomains import get_subdomains, filter_subdomains
 from modules.recon_alive import check_alive
-from modules.recon_scan import run_scan
 from modules.recon_js import get_js_files
 from modules.recon_endpoints import extract_endpoints
-from modules.filtering import is_valid_finding, is_high_value
+from modules.filtering import is_high_value
 from modules.history import load_history, save_history, gen_id
 
 TOKEN = os.getenv("RED_TOKEN")
@@ -20,22 +19,31 @@ url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
 
 def send(msg):
-    requests.post(url, data={"chat_id": CHAT, "text": msg}, timeout=15)
+    try:
+        requests.post(url, data={"chat_id": CHAT, "text": msg}, timeout=15)
+    except:
+        pass
 
 
 history = load_history()
 
-send("🔴 Smart Recon + Fallback ON")
+send("🔴 Recon Mode ON")
 
 
 with open("targets.txt") as f:
-    targets = [line.strip() for line in f]
+    targets = [
+        line.strip()
+        for line in f
+        if line.strip() and not line.startswith("#")
+    ]
 
 
 for t in targets:
 
     subs = get_subdomains(t)
     subs = filter_subdomains(subs)
+
+    subs = [s for s in subs if "@" not in s and "." in s]
 
     if not subs:
         continue
@@ -50,43 +58,6 @@ for t in targets:
     if not high_value_targets:
         continue
 
-    # -------------------
-    # SCAN
-    # -------------------
-    findings = run_scan(high_value_targets[:10])
-
-    valid_findings = []
-
-    for fnd in findings:
-
-        if not is_valid_finding(fnd):
-            continue
-
-        uid = gen_id(fnd)
-
-        if uid in history:
-            continue
-
-        valid_findings.append(fnd)
-        save_history(uid)
-
-    # -------------------
-    # SE TEM VULN → PRIORIDADE
-    # -------------------
-    if valid_findings:
-
-        msg = f"🎯 TARGET: {t}\n\n🚨 HIGH VALUE FINDINGS:\n\n"
-
-        for fnd in valid_findings[:5]:
-            msg += f"- {fnd}\n"
-
-        send(msg)
-        continue
-
-    # -------------------
-    # 🔥 FALLBACK (SEM VULN)
-    # -------------------
-
     js_files = []
     endpoints = []
 
@@ -97,10 +68,9 @@ for t in targets:
     js_files = list(set(js_files))[:5]
 
     if js_files:
-        endpoints = extract_endpoints(js_files)[:5]
+        endpoints = extract_endpoints(js_files)[:10]
 
-    # evita repetir fallback
-    uid = gen_id(t + "fallback")
+    uid = gen_id(t + "recon")
 
     if uid in history:
         continue
@@ -108,7 +78,6 @@ for t in targets:
     save_history(uid)
 
     msg = f"🎯 TARGET: {t}\n\n"
-    msg += "⚠️ No vuln found — Recon data:\n\n"
 
     msg += "🔥 High Value Targets:\n"
     for h in high_value_targets[:5]:
