@@ -10,6 +10,9 @@ from modules.recon.recon_js import get_js_files
 from modules.recon.endpoints import extract_endpoints
 from modules.recon.passive_js import get_passive_js
 
+from modules.core.history import load_history, save_history, gen_id
+from modules.filtering import is_high_value
+
 
 TOKEN = os.getenv("RED_TOKEN")
 CHAT = os.getenv("RED_CHAT")
@@ -45,13 +48,11 @@ with open(targets_path) as f:
 for t in targets:
 
     subs = get_subdomains(t)
-
     subs = list(set(subs))[:20]
 
     if not subs:
         continue
 
-    # 🔥 PRIORIZA HIGH VALUE MAS NÃO BLOQUEIA
     high_value = [s for s in subs if is_high_value(s)]
 
     if high_value:
@@ -64,16 +65,12 @@ for t in targets:
     js_files = []
     endpoints = []
 
-    # -------------------
-    # 🧪 JS (ATIVO LEVE)
-    # -------------------
+    # 🧪 JS
     for h in targets_to_use[:5]:
         js = get_js_files(h)
         js_files.extend(js)
 
-    # -------------------
-    # 👻 PASSIVE JS (SE NÃO ACHOU NADA)
-    # -------------------
+    # 👻 PASSIVE
     if not js_files:
         js_files = get_passive_js(t)
 
@@ -82,9 +79,7 @@ for t in targets:
     if js_files:
         endpoints = extract_endpoints(js_files)[:10]
 
-    # -------------------
-    # 🧠 ANTI DUPLICAÇÃO
-    # -------------------
+    # 🧠 HISTORY
     uid = gen_id(t + "".join(targets_to_use))
 
     if uid in history:
@@ -92,9 +87,7 @@ for t in targets:
 
     save_history(uid)
 
-    # -------------------
     # 📤 OUTPUT
-    # -------------------
     msg = f"🎯 TARGET: {t}\n\n"
     msg += f"{tag}\n\n"
 
