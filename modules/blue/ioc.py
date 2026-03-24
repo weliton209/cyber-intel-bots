@@ -7,7 +7,7 @@ def get_iocs():
         "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt"
     ]
 
-    results = []
+    ips = set()
 
     for url in urls:
         try:
@@ -19,12 +19,9 @@ def get_iocs():
                     continue
 
                 ip = line.split()[0]
-
-                results.append({
-                    "ip": ip
-                })
+                ips.add(ip)
 
         except:
             continue
 
-return list(set([r["ip"] for r in results]))[:10]
+    return [{"ip": ip} for ip in list(ips)[:10]]
