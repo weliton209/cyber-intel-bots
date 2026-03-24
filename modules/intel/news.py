@@ -11,11 +11,12 @@ def get_news():
 
     keywords = [
         "ransomware",
-        "breach",
-        "leak",
+        "data breach",
+        "cyberattack",
         "hacked",
-        "cyber attack",
-        "data exposed"
+        "zero-day",
+        "exploit",
+        "leak"
     ]
 
     results = []
