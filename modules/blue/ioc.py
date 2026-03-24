@@ -27,4 +27,4 @@ def get_iocs():
         except:
             continue
 
-    return results[:10]
+return list(set([r["ip"] for r in results]))[:10]
