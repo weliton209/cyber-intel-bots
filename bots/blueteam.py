@@ -5,8 +5,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import requests
 
-from modules.intel.malware import get_c2
-from modules.intel.apt import get_apt_campaigns
+from modules.blue.cve import get_cves
+from modules.blue.malware import get_malware
+from modules.blue.ioc import get_iocs
 
 from modules.core.history import load_history, save_history, gen_id
 
@@ -19,8 +20,8 @@ url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 def send(msg):
     try:
         requests.post(url, data={"chat_id": CHAT, "text": msg}, timeout=10)
-    except Exception as e:
-        print("Telegram error:", e)
+    except:
+        pass
 
 
 history = load_history()
@@ -28,15 +29,32 @@ history = load_history()
 send("🔵 Blue Team Radar ON")
 
 
-# 🦠 MALWARE
-for m in get_c2():
+# 🚨 CVE
+for c in get_cves():
+
+    uid = gen_id(c["id"])
+
+    if uid in history:
+        continue
+
+    send(f"""🚨 CVE Alert
+
+{c['id']}
+{c['desc']}
+""")
+
+    save_history(uid)
+
+
+# 🦠 Malware
+for m in get_malware():
 
     uid = gen_id(m["hash"])
 
     if uid in history:
         continue
 
-    send(f"""🦠 Threat
+    send(f"""🦠 Malware
 
 Family: {m['family']}
 Hash: {m['hash']}
@@ -45,17 +63,17 @@ Hash: {m['hash']}
     save_history(uid)
 
 
-# 🎯 APT
-for a in get_apt_campaigns():
+# ⚠️ IOC
+for i in get_iocs():
 
-    uid = gen_id(a["title"])
+    uid = gen_id(i["ip"])
 
     if uid in history:
         continue
 
-    send(f"""🎯 APT Campaign
+    send(f"""⚠️ IOC
 
-{a['title']}
+IP: {i['ip']}
 """)
 
     save_history(uid)
