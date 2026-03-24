@@ -38,4 +38,4 @@ def get_cves():
     except:
         return []
 
-    return results[:5]
+return list(set([r["ip"] for r in results]))[:10]
