@@ -2,26 +2,24 @@ import requests
 
 def get_iocs():
 
-    urls = [
-        "https://feodotracker.abuse.ch/downloads/ipblocklist.txt",
-        "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt"
-    ]
+    results = []
 
-    ips = set()
+    try:
+        data = requests.get(
+            "https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.json",
+            timeout=10
+        ).json()
 
-    for url in urls:
-        try:
-            data = requests.get(url, timeout=10).text.splitlines()
+        for item in data.get("data", [])[:10]:
 
-            for line in data:
+            results.append({
+                "ip": item.get("ip_address"),
+                "port": item.get("port"),
+                "malware": item.get("malware"),
+                "status": item.get("status")
+            })
 
-                if not line or line.startswith("#"):
-                    continue
+    except:
+        return []
 
-                ip = line.split()[0]
-                ips.add(ip)
-
-        except:
-            continue
-
-    return [{"ip": ip} for ip in list(ips)[:10]]
+    return results
