@@ -5,12 +5,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import requests
 
-from modules.recon.subdomains import get_subdomains, filter_subdomains
-from modules.recon.passive_js import get_js_passive
+from modules.recon.subdomains import get_subdomains
+from modules.recon.recon_js import get_js_files
 from modules.recon.endpoints import extract_endpoints
+from modules.recon_passive_js import get_passive_js
 
-from modules.core.filtering import is_high_value
+from modules.filtering import is_high_value
 from modules.core.history import load_history, save_history, gen_id
+
 
 TOKEN = os.getenv("RED_TOKEN")
 CHAT = os.getenv("RED_CHAT")
@@ -27,62 +29,90 @@ def send(msg):
 
 history = load_history()
 
-send("🕶️ Passive Recon ON")
+send("🔴 Smart Passive Recon ON")
 
 
-with open("targets.txt") as f:
-    targets = [
-        line.strip()
-        for line in f
-        if line.strip() and not line.startswith("#")
-    ]
+# -------------------
+# 📂 LOAD TARGETS
+# -------------------
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+targets_path = os.path.join(BASE_DIR, "targets.txt")
+
+with open(targets_path) as f:
+    targets = [t.strip() for t in f if t.strip()]
 
 
+# -------------------
+# 🔁 LOOP TARGETS
+# -------------------
 for t in targets:
 
     subs = get_subdomains(t)
-    subs = filter_subdomains(subs)
 
-    subs = [s for s in subs if "@" not in s and "." in s]
+    subs = list(set(subs))[:20]
 
     if not subs:
         continue
 
-    # 🔥 PRIORIZA SEM FAZER REQUISIÇÃO
-    high_value_targets = [s for s in subs if is_high_value(s)]
+    # 🔥 PRIORIZA HIGH VALUE MAS NÃO BLOQUEIA
+    high_value = [s for s in subs if is_high_value(s)]
 
-    if not high_value_targets:
-        high_value_targets = subs[:10]
+    if high_value:
+        targets_to_use = high_value[:10]
+        tag = "🔥 HIGH VALUE"
+    else:
+        targets_to_use = subs[:10]
+        tag = "🌐 RECON"
 
-    # 🔥 JS PASSIVO
-    js_files = get_js_passive(t)
-
+    js_files = []
     endpoints = []
+
+    # -------------------
+    # 🧪 JS (ATIVO LEVE)
+    # -------------------
+    for h in targets_to_use[:5]:
+        js = get_js_files(h)
+        js_files.extend(js)
+
+    # -------------------
+    # 👻 PASSIVE JS (SE NÃO ACHOU NADA)
+    # -------------------
+    if not js_files:
+        js_files = get_passive_js(t)
+
+    js_files = list(set(js_files))[:10]
 
     if js_files:
         endpoints = extract_endpoints(js_files)[:10]
 
-    uid = gen_id(t + "passive")
+    # -------------------
+    # 🧠 ANTI DUPLICAÇÃO
+    # -------------------
+    uid = gen_id(t + "".join(targets_to_use))
 
     if uid in history:
         continue
 
     save_history(uid)
 
+    # -------------------
+    # 📤 OUTPUT
+    # -------------------
     msg = f"🎯 TARGET: {t}\n\n"
+    msg += f"{tag}\n\n"
 
-    msg += "🔥 Potential Targets:\n"
-    for h in high_value_targets[:5]:
-        msg += f"- {h}\n"
+    msg += "🌐 Subdomains:\n"
+    for s in targets_to_use[:5]:
+        msg += f"- {s}\n"
 
     if js_files:
-        msg += "\n🧪 JS (Passive):\n"
+        msg += "\n🧪 JS Files:\n"
         for j in js_files[:5]:
             msg += f"- {j}\n"
 
     if endpoints:
-        msg += "\n🔗 API Endpoints:\n"
-        for e in endpoints:
+        msg += "\n🔗 Endpoints:\n"
+        for e in endpoints[:5]:
             msg += f"- {e}\n"
 
     send(msg)
