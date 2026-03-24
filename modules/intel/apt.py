@@ -1,24 +1,33 @@
-import feedparser
-
-FEEDS = [
-    "https://www.securelist.com/feed/",
-    "https://unit42.paloaltonetworks.com/feed/",
-    "https://www.mandiant.com/resources/blog/rss.xml"
-]
+import requests
 
 def get_apt_campaigns():
 
+    url = "https://www.cisa.gov/news.xml"
+
     results = []
 
-    for feed in FEEDS:
+    try:
+        r = requests.get(url, timeout=10).text
 
-        f = feedparser.parse(feed)
+        items = r.split("<item>")[1:6]
 
-        for entry in f.entries[:5]:
+        for i in items:
+            try:
+                title = i.split("<title>")[1].split("</title>")[0]
+                link = i.split("<link>")[1].split("</link>")[0]
 
-            results.append({
-                "title": entry.title,
-                "link": entry.link
-            })
+                if "APT" not in title and "threat" not in title.lower():
+                    continue
 
-    return results
+                results.append({
+                    "title": title,
+                    "link": link
+                })
+
+            except:
+                continue
+
+    except:
+        return []
+
+    return results[:5]
