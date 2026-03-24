@@ -19,7 +19,6 @@ def get_cves():
             if descriptions:
                 desc = descriptions[0].get("value", "")
 
-            # 🔥 filtro Blue Team (só coisa séria)
             keywords = [
                 "remote", "rce", "execution",
                 "privilege escalation",
@@ -38,4 +37,4 @@ def get_cves():
     except:
         return []
 
-return list(set([r["ip"] for r in results]))[:10]
+    return results[:5]
