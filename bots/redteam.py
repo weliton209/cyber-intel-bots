@@ -8,10 +8,7 @@ import requests
 from modules.recon.subdomains import get_subdomains
 from modules.recon.recon_js import get_js_files
 from modules.recon.endpoints import extract_endpoints
-from modules.recon_passive_js import get_passive_js
-
-from modules.filtering import is_high_value
-from modules.core.history import load_history, save_history, gen_id
+from modules.recon.passive_js import get_passive_js
 
 
 TOKEN = os.getenv("RED_TOKEN")
