@@ -1,29 +1,33 @@
 import requests
 
-def get_exploitable_cves():
+def get_cves():
 
-    url = "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=20"
+    url = "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=30"
 
     results = []
 
     try:
-        r = requests.get(url, timeout=10).json()
+        data = requests.get(url, timeout=10).json()
 
-        for item in r.get("vulnerabilities", []):
+        for item in data.get("vulnerabilities", []):
 
             cve = item.get("cve", {})
             cve_id = cve.get("id")
 
             desc = ""
-
             descriptions = cve.get("descriptions", [])
             if descriptions:
                 desc = descriptions[0].get("value", "")
 
-            # 🔥 filtro básico (prioriza coisa relevante)
-            if not any(word in desc.lower() for word in [
-                "remote", "rce", "execution", "auth bypass", "deserialization"
-            ]):
+            # 🔥 filtro Blue Team (só coisa séria)
+            keywords = [
+                "remote", "rce", "execution",
+                "privilege escalation",
+                "authentication bypass",
+                "deserialization"
+            ]
+
+            if not any(k in desc.lower() for k in keywords):
                 continue
 
             results.append({
