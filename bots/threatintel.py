@@ -10,7 +10,7 @@ from modules.intel.apt import get_apt_campaigns
 from modules.intel.ioc import get_iocs
 from modules.intel.malware import get_c2
 from modules.intel.leaks import get_leaks
-from modules.cve_exploit import get_exploitable_cves
+from modules.intel.cve_exploit import get_exploitable_cves
 
 from modules.core.history import load_history, save_history, gen_id
 
