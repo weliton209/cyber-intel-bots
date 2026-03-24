@@ -1,19 +1,22 @@
 import requests
 
-def get_js_passive(domain):
+def get_passive_js(domain):
+    """
+    Busca arquivos JS de forma passiva via CRT.sh.
+    """
+    results = []
 
-    url = f"http://web.archive.org/cdx/search/cdx?url=*.{domain}/*.js&output=json&fl=original"
+    url = f"https://crt.sh/?q={domain}&output=json"
 
     try:
-        data = requests.get(url, timeout=10).json()
+        r = requests.get(url, timeout=10).json()
+        for entry in r[:50]:
+            name = entry.get("name_value", "")
+            if ".js" in name:
+                if not name.startswith("http"):
+                    name = "https://" + name
+                results.append(name)
     except:
-        return []
+        pass
 
-    results = set()
-
-    # pula o header (linha 0)
-    for row in data[1:]:
-        if isinstance(row, list) and row:
-            results.add(row[0])
-
-    return list(results)[:10]
+    return list(set(results))[:10]
