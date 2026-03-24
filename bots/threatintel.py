@@ -30,7 +30,9 @@ history = load_history()
 send("🧠 Threat Intel Radar ON")
 
 
+# -------------------
 # 🎯 APT
+# -------------------
 for a in get_apt_campaigns():
 
     uid = gen_id(a["title"])
@@ -47,7 +49,9 @@ for a in get_apt_campaigns():
     save_history(uid)
 
 
+# -------------------
 # 🔓 LEAKS
+# -------------------
 for l in get_leaks():
 
     uid = gen_id(l["name"])
@@ -64,23 +68,9 @@ Domain: {l['domain']}
     save_history(uid)
 
 
-# ⚠️ IOC (contextual)
-for i in get_iocs():
-
-    uid = gen_id(i["ip"])
-
-    if uid in history:
-        continue
-
-    send(f"""⚠️ IOC Intel
-
-IP: {i['ip']}
-""")
-
-    save_history(uid)
-
-
+# -------------------
 # 📰 ATTACK NEWS
+# -------------------
 for n in get_news():
 
     uid = gen_id(n["title"])
@@ -88,10 +78,28 @@ for n in get_news():
     if uid in history:
         continue
 
-    send(f"""📰 Attack News
+    send(f"""📰 Cyber Attack
 
 {n['title']}
 {n['link']}
+""")
+
+    save_history(uid)
+
+
+# -------------------
+# ⚠️ IOC
+# -------------------
+for i in get_iocs():
+
+    uid = gen_id(i["ip"])
+
+    if uid in history:
+        continue
+
+    send(f"""⚠️ IOC
+
+IP: {i['ip']}
 """)
 
     save_history(uid)
