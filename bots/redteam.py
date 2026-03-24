@@ -11,8 +11,7 @@ from modules.recon.endpoints import extract_endpoints
 from modules.recon.passive_js import get_passive_js
 
 from modules.core.history import load_history, save_history, gen_id
-from modules.filtering import is_high_value
-
+from modules.core.filtering import is_high_value
 
 TOKEN = os.getenv("RED_TOKEN")
 CHAT = os.getenv("RED_CHAT")
