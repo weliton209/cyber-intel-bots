@@ -4,6 +4,8 @@ def get_news():
 
     feeds = [
         "https://feeds.feedburner.com/TheHackersNews",
+        "https://www.bleepingcomputer.com/feed/",
+        "https://www.darkreading.com/rss.xml",
         "https://www.cisa.gov/news.xml"
     ]
 
