@@ -35,14 +35,17 @@ send("🧠 Threat Intel Radar ON")
 
 
 # -------------------
-# 🎯 LOAD TARGETS
+# 📂 LOAD TARGETS
 # -------------------
-with open("targets.txt") as f:
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+targets_path = os.path.join(BASE_DIR, "targets.txt")
+
+with open(targets_path) as f:
     targets = [t.strip() for t in f if t.strip()]
 
 
 # -------------------
-# 📦 COLETA DE DADOS (UMA VEZ)
+# 📦 COLETA DE DADOS
 # -------------------
 iocs = get_iocs()
 news = get_news()
@@ -95,22 +98,24 @@ for a in apts:
 
 
 # -------------------
-# 🔓 LEAKS (PRIORIZADO)
+# 🔓 LEAKS (TARGET + GLOBAL)
 # -------------------
 for l in leaks:
 
-    if not is_target_related(l.get("domain", ""), targets):
-        continue
+    if is_target_related(l.get("domain", ""), targets):
+        tag = "🎯 TARGET"
+    else:
+        tag = "🌍 GLOBAL"
 
     uid = gen_id(l["name"])
 
     if uid in history:
         continue
 
-    send(f"""🔓 TARGET BREACH
+    send(f"""🔓 {tag} Data Breach
 
 {l['name']}
-Domain: {l['domain']}
+Domain: {l.get('domain')}
 Date: {l.get('date')}
 """)
 
@@ -118,19 +123,21 @@ Date: {l.get('date')}
 
 
 # -------------------
-# 📰 NEWS (PRIORIZADO)
+# 📰 NEWS (TARGET + GLOBAL)
 # -------------------
 for n in news:
 
-    if not is_target_related(n["title"], targets):
-        continue
+    if is_target_related(n["title"], targets):
+        tag = "🎯 TARGET"
+    else:
+        tag = "🌍 GLOBAL"
 
     uid = gen_id(n["title"])
 
     if uid in history:
         continue
 
-    send(f"""🎯 TARGET NEWS
+    send(f"""📰 {tag} Cyber Attack
 
 {n['title']}
 {n['link']}
@@ -140,7 +147,7 @@ for n in news:
 
 
 # -------------------
-# ⚠️ IOC (MELHORADO)
+# ⚠️ IOC
 # -------------------
 for i in iocs:
 
