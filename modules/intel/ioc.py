@@ -1,46 +1,27 @@
 import requests
 
-def get_news():
+def get_iocs():
 
-    feeds = [
-        "https://feeds.feedburner.com/TheHackersNews",
-        "https://www.cisa.gov/news.xml"
+    urls = [
+        "https://feodotracker.abuse.ch/downloads/ipblocklist.txt",
+        "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt"
     ]
 
-    keywords = [
-        "ransomware",
-        "breach",
-        "leak",
-        "hacked",
-        "cyber attack",
-        "data exposed"
-    ]
+    ips = set()
 
-    results = []
-
-    for feed in feeds:
+    for url in urls:
         try:
-            r = requests.get(feed, timeout=10).text
+            data = requests.get(url, timeout=10).text.splitlines()
 
-            items = r.split("<item>")[1:6]
+            for line in data:
 
-            for i in items:
-                try:
-                    title = i.split("<title>")[1].split("</title>")[0]
-                    link = i.split("<link>")[1].split("</link>")[0]
-
-                    if not any(k in title.lower() for k in keywords):
-                        continue
-
-                    results.append({
-                        "title": title,
-                        "link": link
-                    })
-
-                except:
+                if not line or line.startswith("#"):
                     continue
+
+                ip = line.split()[0]
+                ips.add(ip)
 
         except:
             continue
 
-    return results[:5]
+    return [{"ip": ip} for ip in list(ips)[:10]]
