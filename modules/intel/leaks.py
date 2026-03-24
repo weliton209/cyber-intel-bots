@@ -17,7 +17,9 @@ def get_leaks():
 
             results.append({
                 "name": item.get("Name"),
-                "domain": item.get("Domain")
+                "domain": item.get("Domain"),
+                "date": item.get("BreachDate"),
+                "data": ", ".join(item.get("DataClasses", [])[:3])
             })
 
     except:
