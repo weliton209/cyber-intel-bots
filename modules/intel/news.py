@@ -1,81 +1,75 @@
-import feedparser
+import requests
+import re
 
 
-def get_news(limit=5):
+def clean(text):
+    if not text:
+        return ""
+
+    # remove CDATA
+    text = re.sub(r"<!\[CDATA\[(.*?)\]\]>", r"\1", text)
+
+    return text.strip()
+
+
+def get_news():
 
     feeds = [
         "https://feeds.feedburner.com/TheHackersNews",
         "https://www.bleepingcomputer.com/feed/",
         "https://www.darkreading.com/rss.xml",
-        "https://www.cisa.gov/news.xml"
+        "https://www.cisa.gov/news.xml",
+        "https://boletimsec.com/feed/"
     ]
 
-    # 🔥 palavras mais fortes (peso maior)
-    high_keywords = [
+    keywords = [
         "ransomware",
         "data breach",
+        "cyberattack",
+        "hacked",
         "zero-day",
         "exploit",
         "leak",
-        "critical vulnerability"
-    ]
-
-    # ⚠️ palavras médias
-    medium_keywords = [
-        "cyberattack",
-        "hacked",
-        "security flaw",
-        "malware",
-        "phishing"
+        "vazamento",
+        "ataque"
     ]
 
     results = []
-    seen = set()
 
     for feed in feeds:
         try:
-            parsed = feedparser.parse(feed)
+            r = requests.get(feed, timeout=10).text
 
-            for entry in parsed.entries[:10]:
+            items = r.split("<item>")[1:8]
 
-                title = entry.title
-                link = entry.link
+            for i in items:
+                try:
+                    title = clean(i.split("<title>")[1].split("</title>")[0])
+                    link = clean(i.split("<link>")[1].split("</link>")[0])
 
-                title_lower = title.lower()
+                    title_lower = title.lower()
 
-                # 🔥 SCORING
-                score = 0
+                    if not any(k in title_lower for k in keywords):
+                        continue
 
-                if any(k in title_lower for k in high_keywords):
-                    score += 2
+                    # 🔥 TAG DE PRIORIDADE
+                    if any(x in title_lower for x in ["ransomware", "zero-day", "exploit"]):
+                        tag = "🔥 HIGH"
+                    elif any(x in title_lower for x in ["breach", "leak", "vazamento"]):
+                        tag = "⚠️ MED"
+                    else:
+                        tag = "ℹ️ LOW"
 
-                if any(k in title_lower for k in medium_keywords):
-                    score += 1
+                    results.append({
+                        "title": title,
+                        "link": link,
+                        "tag": tag
+                    })
 
-                # ignora notícia irrelevante
-                if score == 0:
+                except:
                     continue
-
-                # remove duplicados
-                uid = title.strip()
-                if uid in seen:
-                    continue
-
-                seen.add(uid)
-
-                # prioridade visual
-                if score >= 2:
-                    tag = "🔥 HIGH"
-                else:
-                    tag = "⚠️ MED"
-
-                results.append({
-                    "title": title,
-                    "link": link,
-                    "tag": tag
-                })
 
         except:
             continue
 
-    return results[:limit]
+    return results[:10]
