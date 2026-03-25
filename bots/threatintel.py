@@ -31,21 +31,21 @@ def send(msg):
 
 history = load_history()
 
-send("🧠 Threat Intel Radar ON")
+send("🧠 Threat Intel PRO ON")
 
 
 # -------------------
-# 📂 LOAD TARGETS
+# 📂 TARGETS
 # -------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 targets_path = os.path.join(BASE_DIR, "targets.txt")
 
 with open(targets_path) as f:
-    targets = [t.strip() for t in f if t.strip()]
+    targets = [t.strip().lower() for t in f if t.strip()]
 
 
 # -------------------
-# 📦 COLETA DE DADOS
+# 📦 DATA COLLECTION
 # -------------------
 iocs = get_iocs()
 news = get_news()
@@ -54,23 +54,28 @@ apts = get_apt_campaigns()
 
 
 # -------------------
-# 🚨 CORRELAÇÃO (ATAQUE ATIVO)
+# 🚨 CORRELATION (HIGH PRIORITY)
 # -------------------
 alerts = correlate_ioc_news(iocs, news)
 
 for a in alerts:
 
-    uid = gen_id(a["ioc"].get("ip", "") + a["news"]["title"])
+    uid = gen_id(
+        str(a["ioc"].get("ip", "")) +
+        str(a["ioc"].get("hash", "")) +
+        a["news"]["title"]
+    )
 
     if uid in history:
         continue
 
     send(f"""🚨 POSSIBLE ACTIVE ATTACK
 
-Malware: {a['ioc'].get('malware')}
-IP: {a['ioc'].get('ip')}
+🔥 Malware: {a['ioc'].get('malware', 'unknown')}
+🌐 IP: {a['ioc'].get('ip')}
+🏳️ Country: {a['ioc'].get('country', 'N/A')}
 
-News:
+📰 News:
 {a['news']['title']}
 {a['news']['link']}
 """)
@@ -83,12 +88,14 @@ News:
 # -------------------
 for a in apts:
 
+    tag = "🎯 TARGET" if is_target_related(a["title"], targets) else "🌍 GLOBAL"
+
     uid = gen_id(a["title"])
 
     if uid in history:
         continue
 
-    send(f"""🎯 APT Campaign
+    send(f"""🎯 {tag} APT Campaign
 
 {a['title']}
 {a['link']}
@@ -98,46 +105,46 @@ for a in apts:
 
 
 # -------------------
-# 🔓 LEAKS (TARGET + GLOBAL)
+# 🔓 LEAKS
 # -------------------
 for l in leaks:
 
-    if is_target_related(l.get("domain", ""), targets):
-        tag = "🎯 TARGET"
-    else:
-        tag = "🌍 GLOBAL"
+    tag = "🎯 TARGET" if is_target_related(l.get("domain", ""), targets) else "🌍 GLOBAL"
 
-    uid = gen_id(l["name"])
+    uid = gen_id(l["name"] + str(l.get("domain")))
 
     if uid in history:
         continue
 
     send(f"""🔓 {tag} Data Breach
 
-{l['name']}
-Domain: {l.get('domain')}
-Date: {l.get('date')}
+🏢 Name: {l['name']}
+🌐 Domain: {l.get('domain', 'N/A')}
+📅 Date: {l.get('date', 'N/A')}
 """)
 
     save_history(uid)
 
 
 # -------------------
-# 📰 NEWS (TARGET + GLOBAL)
+# 📰 NEWS (SMART FILTER)
 # -------------------
 for n in news:
 
-    if is_target_related(n["title"], targets):
-        tag = "🎯 TARGET"
-    else:
-        tag = "🌍 GLOBAL"
+    is_target = is_target_related(n["title"], targets)
+
+    # 🔥 só manda global se HIGH
+    if not is_target and "🔥" not in n.get("tag", ""):
+        continue
+
+    tag = "🎯 TARGET" if is_target else "🌍 GLOBAL"
 
     uid = gen_id(n["title"])
 
     if uid in history:
         continue
 
-    send(f"""📰 {tag} Cyber Attack
+    send(f"""📰 {tag} Cyber Attack {n.get('tag','')}
 
 {n['title']}
 {n['link']}
@@ -147,20 +154,27 @@ for n in news:
 
 
 # -------------------
-# ⚠️ IOC
+# ⚠️ IOC (ENRIQUECIDO)
 # -------------------
 for i in iocs:
 
-    uid = gen_id(i.get("ip", ""))
+    uid = gen_id(
+        str(i.get("ip", "")) +
+        str(i.get("hash", "")) +
+        str(i.get("domain", ""))
+    )
 
     if uid in history:
         continue
 
-    send(f"""⚠️ IOC
+    send(f"""⚠️ IOC Detected
 
-IP: {i.get('ip')}
-Malware: {i.get('malware')}
-Port: {i.get('port')}
+🌐 IP: {i.get('ip', 'N/A')}
+🏳️ Country: {i.get('country', 'N/A')}
+🔌 Port: {i.get('port', 'N/A')}
+🦠 Malware: {i.get('malware', 'unknown')}
+🔑 Hash: {i.get('hash', 'N/A')}
+🌍 Domain: {i.get('domain', 'N/A')}
 """)
 
     save_history(uid)
