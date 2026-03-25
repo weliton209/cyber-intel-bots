@@ -10,76 +10,130 @@ from modules.blue.malware import get_malware
 from modules.blue.ioc import get_iocs
 from modules.core.history import load_history, save_history, gen_id
 
-# Tokens e chat do Telegram
+
 TOKEN = os.getenv("BLUE_TOKEN")
 CHAT = os.getenv("BLUE_CHAT")
+
 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
+
 def send(msg):
-    """Envia mensagem para Telegram"""
     try:
         requests.post(url, data={"chat_id": CHAT, "text": msg}, timeout=10)
     except Exception as e:
         print(f"[!] Falha ao enviar msg: {e}")
 
-# Carrega histórico
+
 history = load_history()
-send("🔵 Blue Team Radar ON")
+
+send("🔵 Blue Team PRO ON")
+
 
 # -------------------
-# 🚨 CVEs
+# 🚨 CVE (PRIORIZADO)
 # -------------------
 for c in get_cves():
+
+    cvss = float(c.get("cvss", 0))
+
+    # 🔥 filtra só relevante
+    if cvss < 7:
+        continue
+
+    if cvss >= 9:
+        severity = "🔥 CRITICAL"
+    elif cvss >= 7:
+        severity = "⚠️ HIGH"
+
     uid = gen_id(c["id"])
+
     if uid in history:
         continue
 
-    msg = f"""🚨 CVE Alert
+    send(f"""🚨 {severity} CVE
 
 ID: {c['id']}
-Description: {c['desc']}
-CVSS: {c.get('cvss', 'N/A')}
+CVSS: {cvss}
 Published: {c.get('published', 'N/A')}
-"""
-    send(msg)
+
+📝 {c['desc'][:200]}
+
+🛠 Action:
+- Check affected systems
+- Apply patch ASAP
+- Monitor exploitation attempts
+""")
+
     save_history(uid)
 
+
 # -------------------
-# 🦠 Malware
+# 🦠 MALWARE (COM CONTEXTO)
 # -------------------
 for m in get_malware():
+
     uid = gen_id(m["hash"])
+
     if uid in history:
         continue
 
-    msg = f"""🦠 Malware Alert
+    send(f"""🦠 Malware Detected
 
 Family: {m['family']}
 Hash: {m['hash']}
 Type: {m.get('type','N/A')}
-"""
-    send(msg)
+
+🛠 Action:
+- Block hash in EDR
+- Search in SIEM
+- Isolate infected host if found
+""")
+
     save_history(uid)
 
+
 # -------------------
-# ⚠️ IOCs Detalhados
+# ⚠️ IOC (PRIORIZADO)
 # -------------------
 for i in get_iocs():
-    # UID único usando IP + hash ou domínio
-    uid = gen_id(i.get("ip","") + str(i.get("hash","")) + str(i.get("domain","")) )
+
+    uid = gen_id(
+        i.get("ip","") +
+        str(i.get("hash","")) +
+        str(i.get("domain",""))
+    )
+
     if uid in history:
         continue
 
-    msg = f"""⚠️ IOC Detected
+    # 🔥 SCORE SIMPLES
+    score = 0
 
-IP: {i.get('ip', 'N/A')}
-Port: {i.get('port', 'N/A')}
-Country: {i.get('country', 'N/A')}
-Type: {i.get('type', 'N/A')}
-Malware Family: {i.get('family', 'N/A')}
-Hash: {i.get('hash', 'N/A')}
-Domain: {i.get('domain', 'N/A')}
-ASN: {i.get('asn', 'N/A')}
-"""
-    send(msg)
+    if i.get("malware"): score += 2
+    if i.get("port"): score += 1
+    if i.get("asn"): score += 1
+
+    if score >= 3:
+        severity = "🔥 HIGH"
+    elif score >= 2:
+        severity = "⚠️ MED"
+    else:
+        severity = "ℹ️ LOW"
+
+    send(f"""⚠️ IOC {severity}
+
+🌐 IP: {i.get('ip', 'N/A')}
+🌍 Country: {i.get('country', 'N/A')}
+🔌 Port: {i.get('port', 'N/A')}
+🦠 Malware: {i.get('family', 'N/A')}
+🔑 Hash: {i.get('hash', 'N/A')}
+🌐 Domain: {i.get('domain', 'N/A')}
+🏢 ASN: {i.get('asn', 'N/A')}
+
+🛠 Action:
+- Block IP/Domain on firewall
+- Search logs (SIEM)
+- Check outbound connections
+""")
+
     save_history(uid)
