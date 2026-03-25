@@ -1,6 +1,7 @@
-import requests
+import feedparser
 
-def get_news():
+
+def get_news(limit=5):
 
     feeds = [
         "https://feeds.feedburner.com/TheHackersNews",
@@ -9,41 +10,72 @@ def get_news():
         "https://www.cisa.gov/news.xml"
     ]
 
-    keywords = [
+    # 🔥 palavras mais fortes (peso maior)
+    high_keywords = [
         "ransomware",
         "data breach",
-        "cyberattack",
-        "hacked",
         "zero-day",
         "exploit",
-        "leak"
+        "leak",
+        "critical vulnerability"
+    ]
+
+    # ⚠️ palavras médias
+    medium_keywords = [
+        "cyberattack",
+        "hacked",
+        "security flaw",
+        "malware",
+        "phishing"
     ]
 
     results = []
+    seen = set()
 
     for feed in feeds:
         try:
-            r = requests.get(feed, timeout=10).text
+            parsed = feedparser.parse(feed)
 
-            items = r.split("<item>")[1:6]
+            for entry in parsed.entries[:10]:
 
-            for i in items:
-                try:
-                    title = i.split("<title>")[1].split("</title>")[0]
-                    link = i.split("<link>")[1].split("</link>")[0]
+                title = entry.title
+                link = entry.link
 
-                    if not any(k in title.lower() for k in keywords):
-                        continue
+                title_lower = title.lower()
 
-                    results.append({
-                        "title": title,
-                        "link": link
-                    })
+                # 🔥 SCORING
+                score = 0
 
-                except:
+                if any(k in title_lower for k in high_keywords):
+                    score += 2
+
+                if any(k in title_lower for k in medium_keywords):
+                    score += 1
+
+                # ignora notícia irrelevante
+                if score == 0:
                     continue
+
+                # remove duplicados
+                uid = title.strip()
+                if uid in seen:
+                    continue
+
+                seen.add(uid)
+
+                # prioridade visual
+                if score >= 2:
+                    tag = "🔥 HIGH"
+                else:
+                    tag = "⚠️ MED"
+
+                results.append({
+                    "title": title,
+                    "link": link,
+                    "tag": tag
+                })
 
         except:
             continue
 
-    return results[:5]
+    return results[:limit]
