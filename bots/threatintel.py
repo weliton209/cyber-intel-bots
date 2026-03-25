@@ -13,6 +13,8 @@ from modules.intel.ioc import get_iocs
 from modules.intel.correlation import correlate_ioc_news
 from modules.intel.prioritization import is_target_related
 from modules.intel.credentials import analyze_credential_leak
+from modules.intel.pastes import get_paste_leaks
+
 from modules.core.history import load_history, save_history, gen_id
 
 
@@ -31,7 +33,7 @@ def send(msg):
 
 history = load_history()
 
-send("🧠 Threat Intel PRO ON")
+send("🧠 Threat Intel PRO MAX ON")
 
 
 # -------------------
@@ -49,7 +51,7 @@ with open(targets_path) as f:
 # -------------------
 iocs = get_iocs()
 news = get_news()
-leaks = get_leaks()
+leaks = get_leaks(targets)  # 🔥 AGORA USANDO TARGETS
 apts = get_apt_campaigns()
 
 
@@ -60,6 +62,8 @@ alerts = correlate_ioc_news(iocs, news)
 
 for a in alerts:
 
+    risk = "🔥 HIGH" if a["ioc"].get("malware") else "⚠️ MED"
+
     uid = gen_id(
         str(a["ioc"].get("ip", "")) +
         str(a["ioc"].get("hash", "")) +
@@ -69,7 +73,7 @@ for a in alerts:
     if uid in history:
         continue
 
-    send(f"""🚨 POSSIBLE ACTIVE ATTACK
+    send(f"""🚨 POSSIBLE ACTIVE ATTACK {risk}
 
 🔥 Malware: {a['ioc'].get('malware', 'unknown')}
 🌐 IP: {a['ioc'].get('ip')}
@@ -78,6 +82,10 @@ for a in alerts:
 📰 News:
 {a['news']['title']}
 {a['news']['link']}
+
+🛠 Action:
+- Block IOC
+- Investigate logs
 """)
 
     save_history(uid)
@@ -113,7 +121,7 @@ for l in leaks:
 
     level = analysis["level"]
 
-    # 🔥 REGRA DE OURO (ANTI RUÍDO)
+    # 🔥 ANTI RUÍDO
     if level not in ["🔥 CRITICAL", "⚠️ HIGH"]:
         continue
 
@@ -139,7 +147,38 @@ for l in leaks:
 """)
 
     save_history(uid)
-    
+
+
+# -------------------
+# 🔥 LIVE CREDENTIAL LEAKS
+# -------------------
+pastes = get_paste_leaks(targets)
+
+for p in pastes:
+
+    uid = gen_id(p["url"])
+
+    if uid in history:
+        continue
+
+    send(f"""🔥 LIVE CREDENTIAL LEAK
+
+🎯 Target: {p['target']}
+
+🧾 Sample:
+{chr(10).join(p['snippet'])}
+
+🔗 Source:
+{p['url']}
+
+🛠 Risk:
+- Active credential exposure
+- Immediate takeover risk
+""")
+
+    save_history(uid)
+
+
 # -------------------
 # 📰 NEWS (SMART FILTER)
 # -------------------
@@ -147,7 +186,6 @@ for n in news:
 
     is_target = is_target_related(n["title"], targets)
 
-    # 🔥 só manda global se HIGH
     if not is_target and "🔥" not in n.get("tag", ""):
         continue
 
@@ -168,9 +206,23 @@ for n in news:
 
 
 # -------------------
-# ⚠️ IOC (ENRIQUECIDO)
+# ⚠️ IOC (SMART)
 # -------------------
 for i in iocs:
+
+    score = 0
+
+    if i.get("malware"): score += 2
+    if i.get("port"): score += 1
+    if i.get("asn"): score += 1
+
+    if score < 2:
+        continue
+
+    if score >= 3:
+        level = "🔥 HIGH"
+    else:
+        level = "⚠️ MED"
 
     uid = gen_id(
         str(i.get("ip", "")) +
@@ -181,7 +233,7 @@ for i in iocs:
     if uid in history:
         continue
 
-    send(f"""⚠️ IOC Detected
+    send(f"""⚠️ IOC {level}
 
 🌐 IP: {i.get('ip', 'N/A')}
 🏳️ Country: {i.get('country', 'N/A')}
@@ -189,6 +241,10 @@ for i in iocs:
 🦠 Malware: {i.get('malware', 'unknown')}
 🔑 Hash: {i.get('hash', 'N/A')}
 🌍 Domain: {i.get('domain', 'N/A')}
+
+🛠 Action:
+- Block IOC
+- Hunt in SIEM
 """)
 
     save_history(uid)
