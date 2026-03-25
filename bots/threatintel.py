@@ -105,40 +105,41 @@ for a in apts:
 
 
 # -------------------
-# 🔓 LEAKS (SMART)
+# 🔓 LEAKS (CRED INTEL)
 # -------------------
 for l in leaks:
 
-    is_target = l.get("target")
+    analysis = analyze_credential_leak(l, targets)
 
-    # 🔥 REGRA DE OURO
-    if not is_target and l.get("risk") != "🔥 HIGH":
+    level = analysis["level"]
+
+    # 🔥 REGRA DE OURO (ANTI RUÍDO)
+    if level not in ["🔥 CRITICAL", "⚠️ HIGH"]:
         continue
-
-    if is_target:
-        tag = "🎯 TARGET"
-    else:
-        tag = "🌍 GLOBAL"
 
     uid = gen_id(l["name"] + str(l.get("domain")))
 
     if uid in history:
         continue
 
-    send(f"""🔓 {tag} Data Breach {l['risk']}
+    send(f"""🔓 Credential Leak {level}
 
 🏢 Name: {l['name']}
 🌐 Domain: {l.get('domain', 'N/A')}
 📅 Date: {l.get('date')}
 📦 Data: {l.get('data')}
 
-🛠 Impact:
-- Credential stuffing risk
-- Password reuse attack
+🎯 Related to Target: {analysis['related']}
+🔑 Exploitable: {analysis['exploitable']}
+
+🛠 Attack Paths:
+- Credential stuffing
+- Password reuse
+- Account takeover
 """)
 
     save_history(uid)
-
+    
 # -------------------
 # 📰 NEWS (SMART FILTER)
 # -------------------
