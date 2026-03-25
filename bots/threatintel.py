@@ -12,7 +12,7 @@ from modules.intel.ioc import get_iocs
 
 from modules.intel.correlation import correlate_ioc_news
 from modules.intel.prioritization import is_target_related
-
+from modules.intel.credentials import analyze_credential_leak
 from modules.core.history import load_history, save_history, gen_id
 
 
