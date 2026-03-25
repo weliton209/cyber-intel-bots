@@ -16,7 +16,15 @@ def is_target_leak(domain, targets):
 
     domain = domain.lower()
 
-    return any(t in domain for t in targets)
+    for t in targets:
+        if t in domain:
+            return True
+
+        base = t.split(".")[0]
+        if len(base) > 4 and base in domain:
+            return True
+
+    return False
 
 
 def get_leaks(targets=None, limit=20):
@@ -39,18 +47,16 @@ def get_leaks(targets=None, limit=20):
             date = item.get("BreachDate")
             data_classes = item.get("DataClasses", [])
 
-            # 🔥 FILTRO 1: recente
+            # 🔥 filtros
             if not is_recent(date):
                 continue
 
-            # 🔥 FILTRO 2: só leaks com valor real
             if not any(x in data_classes for x in ["Passwords", "Email addresses"]):
                 continue
 
-            # 🔥 FILTRO 3: se passou targets, prioriza
             is_target = is_target_leak(domain, targets or [])
 
-            # 🔥 SCORE
+            # 🔥 score
             score = 0
             if "Passwords" in data_classes:
                 score += 3
