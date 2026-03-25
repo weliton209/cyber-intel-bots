@@ -4,7 +4,7 @@ import re
 
 def get_paste_leaks(targets):
 
-    url = "https://psbdmp.ws/api/search/recent"  # pastebin dump API pública
+    url = "https://psbdmp.ws/api/search/recent"
 
     results = []
 
@@ -13,9 +13,8 @@ def get_paste_leaks(targets):
 
         for item in data.get("data", [])[:20]:
 
-            text = item.get("id", "")
-
-            paste_url = f"https://psbdmp.ws/api/dump/{text}"
+            paste_id = item.get("id")
+            paste_url = f"https://psbdmp.ws/api/dump/{paste_id}"
 
             try:
                 content = requests.get(paste_url, timeout=10).text.lower()
@@ -26,11 +25,12 @@ def get_paste_leaks(targets):
 
                     if base in content:
 
-                        # tenta extrair credencial
-                        matches = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+[:|].{4,20}", content)
+                        matches = re.findall(
+                            r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+[:|].{4,20}",
+                            content
+                        )
 
                         results.append({
-                            "source": "paste",
                             "target": t,
                             "snippet": matches[:3],
                             "url": paste_url
