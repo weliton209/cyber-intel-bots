@@ -1,6 +1,3 @@
-import re
-
-
 def is_target_related_loose(text, targets):
 
     text = (text or "").lower()
@@ -11,10 +8,9 @@ def is_target_related_loose(text, targets):
         if t in text:
             return True
 
-        # pega raiz do domínio (shopify de shopify.com)
         base = t.split(".")[0]
 
-        if base in text:
+        if len(base) > 4 and base in text:
             return True
 
     return False
@@ -24,7 +20,6 @@ def is_exploitable(leak):
 
     data = (leak.get("data") or "").lower()
 
-    # 🔥 critérios reais de ataque
     if "password" in data:
         return True
 
@@ -46,7 +41,6 @@ def analyze_credential_leak(leak, targets):
 
     exploitable = is_exploitable(leak)
 
-    # 🔥 classificação final
     if related and exploitable:
         level = "🔥 CRITICAL"
     elif exploitable:
