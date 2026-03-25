@@ -105,26 +105,39 @@ for a in apts:
 
 
 # -------------------
-# 🔓 LEAKS
+# 🔓 LEAKS (SMART)
 # -------------------
 for l in leaks:
 
-    tag = "🎯 TARGET" if is_target_related(l.get("domain", ""), targets) else "🌍 GLOBAL"
+    is_target = l.get("target")
+
+    # 🔥 REGRA DE OURO
+    if not is_target and l.get("risk") != "🔥 HIGH":
+        continue
+
+    if is_target:
+        tag = "🎯 TARGET"
+    else:
+        tag = "🌍 GLOBAL"
 
     uid = gen_id(l["name"] + str(l.get("domain")))
 
     if uid in history:
         continue
 
-    send(f"""🔓 {tag} Data Breach
+    send(f"""🔓 {tag} Data Breach {l['risk']}
 
 🏢 Name: {l['name']}
 🌐 Domain: {l.get('domain', 'N/A')}
-📅 Date: {l.get('date', 'N/A')}
+📅 Date: {l.get('date')}
+📦 Data: {l.get('data')}
+
+🛠 Impact:
+- Credential stuffing risk
+- Password reuse attack
 """)
 
     save_history(uid)
-
 
 # -------------------
 # 📰 NEWS (SMART FILTER)
