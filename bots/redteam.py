@@ -10,7 +10,7 @@ from modules.recon.recon_js import get_js_files
 from modules.recon.endpoints import extract_endpoints
 from modules.recon.passive_js import get_passive_js
 
-from modules.core.history import load_history, save_history, gen_id
+from modules.core.recon_history import load_recon_history, save_recon_history
 
 
 TOKEN = os.getenv("RED_TOKEN")
@@ -27,9 +27,9 @@ def send(msg):
 
 
 # -------------------
-# 📂 LOAD HISTORY
+# 📂 LOAD HISTORY (NOVO)
 # -------------------
-history = load_history()
+history = load_recon_history()
 
 seen_subs = set(history.get("subs", []))
 seen_js = set(history.get("js", []))
@@ -78,12 +78,12 @@ for t in targets:
         tag = "🌐 RECON"
 
     # -------------------
-    # 🆕 FILTRO NOVOS SUBS
+    # 🆕 NOVOS SUBDOMAINS
     # -------------------
     new_subs = [s for s in targets_to_use if s not in seen_subs]
 
     # -------------------
-    # 🧪 JS
+    # 🧪 JS FILES
     # -------------------
     js_files = []
 
@@ -104,7 +104,7 @@ for t in targets:
     endpoints = extract_endpoints(js_files)
     endpoints = list(set(endpoints))[:20]
 
-    # 🔥 filtra só endpoints interessantes
+    # 🔥 filtra endpoints relevantes
     interesting = ["api", "login", "admin", "auth", "v1", "v2"]
 
     endpoints = [
@@ -115,7 +115,7 @@ for t in targets:
     new_endpoints = [e for e in endpoints if e not in seen_endpoints]
 
     # -------------------
-    # 🚫 SE NÃO TEM NOVIDADE → SKIP
+    # 🚫 SE NÃO TEM NOVIDADE
     # -------------------
     if not new_subs and not new_js and not new_endpoints:
         continue
@@ -127,7 +127,7 @@ for t in targets:
     seen_js.update(new_js)
     seen_endpoints.update(new_endpoints)
 
-    save_history({
+    save_recon_history({
         "subs": list(seen_subs),
         "js": list(seen_js),
         "endpoints": list(seen_endpoints)
