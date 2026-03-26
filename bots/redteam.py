@@ -10,15 +10,7 @@ from modules.recon.recon_js import get_js_files
 from modules.recon.endpoints import extract_endpoints
 from modules.recon.passive_js import get_passive_js
 
-from modules.recon.analyzer import (
-    classify_endpoint,
-    extract_params,
-    is_sensitive,
-    score_endpoint
-)
-
 from modules.core.history import load_history, save_history, gen_id
-from modules.core.filtering import is_high_value
 
 
 TOKEN = os.getenv("RED_TOKEN")
@@ -34,13 +26,20 @@ def send(msg):
         pass
 
 
+# -------------------
+# 📂 LOAD HISTORY
+# -------------------
 history = load_history()
 
-send("🔴 Smart Recon PRO ON")
+seen_subs = set(history.get("subs", []))
+seen_js = set(history.get("js", []))
+seen_endpoints = set(history.get("endpoints", []))
+
+send("🔴 Smart Recon DELTA ON")
 
 
 # -------------------
-# 📂 TARGETS
+# 📂 LOAD TARGETS
 # -------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 targets_path = os.path.join(BASE_DIR, "targets.txt")
@@ -50,16 +49,25 @@ with open(targets_path) as f:
 
 
 # -------------------
-# 🔁 LOOP
+# 🔥 HIGH VALUE FILTER
+# -------------------
+def is_high_value(sub):
+    keywords = ["api", "admin", "dev", "stage", "internal", "auth"]
+    return any(k in sub.lower() for k in keywords)
+
+
+# -------------------
+# 🔁 LOOP TARGETS
 # -------------------
 for t in targets:
 
     subs = get_subdomains(t)
-    subs = list(set(subs))[:20]
+    subs = list(set(subs))[:30]
 
     if not subs:
         continue
 
+    # 🔥 prioriza high value
     high_value = [s for s in subs if is_high_value(s)]
 
     if high_value:
@@ -69,79 +77,81 @@ for t in targets:
         targets_to_use = subs[:10]
         tag = "🌐 RECON"
 
-    js_files = []
-    endpoints = []
+    # -------------------
+    # 🆕 FILTRO NOVOS SUBS
+    # -------------------
+    new_subs = [s for s in targets_to_use if s not in seen_subs]
 
-    # JS
+    # -------------------
+    # 🧪 JS
+    # -------------------
+    js_files = []
+
     for h in targets_to_use[:5]:
         js = get_js_files(h)
         js_files.extend(js)
 
-    # fallback passivo
     if not js_files:
         js_files = get_passive_js(t)
 
-    js_files = list(set(js_files))[:10]
+    js_files = list(set(js_files))[:20]
 
-    if js_files:
-        endpoints = extract_endpoints(js_files)[:20]
-
-    # -------------------
-    # 🔥 ANALYSIS
-    # -------------------
-    classified = []
-    sensitive = []
-    scored = []
-    params = extract_params(endpoints)
-
-    for e in endpoints:
-        c = classify_endpoint(e)
-        s = score_endpoint(e)
-
-        classified.append(f"{c} → {e}")
-        scored.append(f"{s} → {c} → {e}")
-
-        if is_sensitive(e):
-            sensitive.append(e)
+    new_js = [j for j in js_files if j not in seen_js]
 
     # -------------------
-    # 🧠 HISTORY
+    # 🔗 ENDPOINTS
     # -------------------
-    uid = gen_id(t + "".join(targets_to_use))
+    endpoints = extract_endpoints(js_files)
+    endpoints = list(set(endpoints))[:20]
 
-    if uid in history:
+    # 🔥 filtra só endpoints interessantes
+    interesting = ["api", "login", "admin", "auth", "v1", "v2"]
+
+    endpoints = [
+        e for e in endpoints
+        if any(k in e.lower() for k in interesting)
+    ]
+
+    new_endpoints = [e for e in endpoints if e not in seen_endpoints]
+
+    # -------------------
+    # 🚫 SE NÃO TEM NOVIDADE → SKIP
+    # -------------------
+    if not new_subs and not new_js and not new_endpoints:
         continue
 
-    save_history(uid)
+    # -------------------
+    # 🧠 UPDATE HISTORY
+    # -------------------
+    seen_subs.update(new_subs)
+    seen_js.update(new_js)
+    seen_endpoints.update(new_endpoints)
+
+    save_history({
+        "subs": list(seen_subs),
+        "js": list(seen_js),
+        "endpoints": list(seen_endpoints)
+    })
 
     # -------------------
-    # 📤 OUTPUT
+    # 📤 OUTPUT LIMPO
     # -------------------
     msg = f"🎯 TARGET: {t}\n\n"
     msg += f"{tag}\n\n"
 
-    msg += "🌐 Subdomains:\n"
-    for s in targets_to_use[:5]:
-        msg += f"- {s}\n"
+    if new_subs:
+        msg += "🌐 New Subdomains:\n"
+        for s in new_subs[:5]:
+            msg += f"- {s}\n"
 
-    if js_files:
-        msg += "\n🧪 JS Files:\n"
-        for j in js_files[:5]:
+    if new_js:
+        msg += "\n🧪 New JS Files:\n"
+        for j in new_js[:5]:
             msg += f"- {j}\n"
 
-    if scored:
-        msg += "\n🔗 Endpoints (Scored):\n"
-        for e in scored[:5]:
+    if new_endpoints:
+        msg += "\n🔗 New Endpoints:\n"
+        for e in new_endpoints[:5]:
             msg += f"- {e}\n"
-
-    if params:
-        msg += "\n⚠️ Possible Inputs:\n"
-        for p in params[:5]:
-            msg += f"- {p}\n"
-
-    if sensitive:
-        msg += "\n🚨 Sensitive:\n"
-        for s in sensitive[:5]:
-            msg += f"- {s}\n"
 
     send(msg)
