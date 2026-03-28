@@ -185,6 +185,7 @@ for n in news:
 
     tag_pyramid, score = classify_intel(n["title"])
 
+    # 🔥 ignora lixo
     if score < 2:
         continue
 
@@ -196,7 +197,10 @@ for n in news:
     send(f"""📰 Threat Intel {tag_pyramid} {n.get('tag','')}
 
 {n['title']}
-{n['link']}
+
+🧠 {n.get('summary','')}
+
+🔗 {n['link']}
 """)
 
     save_history(uid)
