@@ -9,11 +9,12 @@ from modules.intel.apt import get_apt_campaigns
 from modules.intel.leaks import get_leaks
 from modules.intel.news import get_news
 from modules.intel.ioc import get_iocs
+from modules.intel.pastes import get_paste_leaks
 
 from modules.intel.correlation import correlate_ioc_news
 from modules.intel.prioritization import is_target_related
 from modules.intel.credentials import analyze_credential_leak
-from modules.intel.pastes import get_paste_leaks
+from modules.intel.pyramid import classify_intel
 
 from modules.core.history import load_history, save_history, gen_id
 
@@ -31,9 +32,11 @@ def send(msg):
         pass
 
 
+# -------------------
+# 🧠 INIT
+# -------------------
 history = load_history()
-
-send("🧠 Threat Intel PRO MAX ON")
+send("🧠 Threat Intel PRO MAX (Pyramid Mode ON)")
 
 
 # -------------------
@@ -51,12 +54,13 @@ with open(targets_path) as f:
 # -------------------
 iocs = get_iocs()
 news = get_news()
-leaks = get_leaks(targets)  # 🔥 AGORA USANDO TARGETS
+leaks = get_leaks(targets)
 apts = get_apt_campaigns()
+pastes = get_paste_leaks(targets)
 
 
 # -------------------
-# 🚨 CORRELATION (HIGH PRIORITY)
+# 🚨 CORRELATION (ATAQUE ATIVO)
 # -------------------
 alerts = correlate_ioc_news(iocs, news)
 
@@ -92,7 +96,7 @@ for a in alerts:
 
 
 # -------------------
-# 🎯 APT
+# 🎯 APT (ALTO NA PIRÂMIDE)
 # -------------------
 for a in apts:
 
@@ -103,7 +107,7 @@ for a in apts:
     if uid in history:
         continue
 
-    send(f"""🎯 {tag} APT Campaign
+    send(f"""🎯 {tag} APT Campaign 🔺
 
 {a['title']}
 {a['link']}
@@ -113,36 +117,34 @@ for a in apts:
 
 
 # -------------------
-# 🔓 LEAKS (CRED INTEL)
+# 🔓 LEAKS (CREDENCIAIS)
 # -------------------
 for l in leaks:
 
     analysis = analyze_credential_leak(l, targets)
 
-    level = analysis["level"]
-
-    # 🔥 ANTI RUÍDO
-    if level not in ["🔥 CRITICAL", "⚠️ HIGH"]:
+    if analysis["level"] not in ["🔥 CRITICAL", "⚠️ HIGH"]:
         continue
+
+    tag_pyramid, _ = classify_intel(l.get("data", ""))
 
     uid = gen_id(l["name"] + str(l.get("domain")))
 
     if uid in history:
         continue
 
-    send(f"""🔓 Credential Leak {level}
+    send(f"""🔓 Credential Leak {analysis['level']} {tag_pyramid}
 
 🏢 Name: {l['name']}
 🌐 Domain: {l.get('domain', 'N/A')}
 📅 Date: {l.get('date')}
 📦 Data: {l.get('data')}
 
-🎯 Related to Target: {analysis['related']}
+🎯 Related: {analysis['related']}
 🔑 Exploitable: {analysis['exploitable']}
 
 🛠 Attack Paths:
 - Credential stuffing
-- Password reuse
 - Account takeover
 """)
 
@@ -150,10 +152,8 @@ for l in leaks:
 
 
 # -------------------
-# 🔥 LIVE CREDENTIAL LEAKS
+# 🔥 LIVE PASTE LEAKS
 # -------------------
-pastes = get_paste_leaks(targets)
-
 for p in pastes:
 
     uid = gen_id(p["url"])
@@ -172,31 +172,28 @@ for p in pastes:
 {p['url']}
 
 🛠 Risk:
-- Active credential exposure
-- Immediate takeover risk
+- Immediate account takeover
 """)
 
     save_history(uid)
 
 
 # -------------------
-# 📰 NEWS (SMART FILTER)
+# 📰 NEWS (PYRAMID)
 # -------------------
 for n in news:
 
-    is_target = is_target_related(n["title"], targets)
+    tag_pyramid, score = classify_intel(n["title"])
 
-    if not is_target and "🔥" not in n.get("tag", ""):
+    if score < 2:
         continue
-
-    tag = "🎯 TARGET" if is_target else "🌍 GLOBAL"
 
     uid = gen_id(n["title"])
 
     if uid in history:
         continue
 
-    send(f"""📰 {tag} Cyber Attack {n.get('tag','')}
+    send(f"""📰 Threat Intel {tag_pyramid} {n.get('tag','')}
 
 {n['title']}
 {n['link']}
@@ -206,13 +203,13 @@ for n in news:
 
 
 # -------------------
-# ⚠️ IOC (SMART)
+# ⚠️ IOC (FILTRADO PIRÂMIDE)
 # -------------------
 for i in iocs:
 
-    tag, score = classify_intel(i)
+    tag_pyramid, score = classify_intel(i)
 
-    # 🔥 ignora lixo (base da pirâmide)
+    # 🔥 ignora base da pirâmide (IP/hash simples)
     if score <= 1:
         continue
 
@@ -221,13 +218,13 @@ for i in iocs:
     if uid in history:
         continue
 
-    send(f"""⚠️ IOC {tag}
+    send(f"""⚠️ IOC {tag_pyramid}
 
-🌐 IP: {i.get('ip')}
-🦠 Malware: {i.get('malware')}
-🌍 Domain: {i.get('domain')}
+🌐 IP: {i.get('ip', 'N/A')}
+🦠 Malware: {i.get('malware', 'unknown')}
+🌍 Domain: {i.get('domain', 'N/A')}
 
-🧠 Intel Level: {tag}
+🧠 Intel Level: {tag_pyramid}
 """)
 
     save_history(uid)
