@@ -210,41 +210,24 @@ for n in news:
 # -------------------
 for i in iocs:
 
-    score = 0
+    tag, score = classify_intel(i)
 
-    if i.get("malware"): score += 2
-    if i.get("port"): score += 1
-    if i.get("asn"): score += 1
-
-    if score < 2:
+    # 🔥 ignora lixo (base da pirâmide)
+    if score <= 1:
         continue
 
-    if score >= 3:
-        level = "🔥 HIGH"
-    else:
-        level = "⚠️ MED"
-
-    uid = gen_id(
-        str(i.get("ip", "")) +
-        str(i.get("hash", "")) +
-        str(i.get("domain", ""))
-    )
+    uid = gen_id(str(i))
 
     if uid in history:
         continue
 
-    send(f"""⚠️ IOC {level}
+    send(f"""⚠️ IOC {tag}
 
-🌐 IP: {i.get('ip', 'N/A')}
-🏳️ Country: {i.get('country', 'N/A')}
-🔌 Port: {i.get('port', 'N/A')}
-🦠 Malware: {i.get('malware', 'unknown')}
-🔑 Hash: {i.get('hash', 'N/A')}
-🌍 Domain: {i.get('domain', 'N/A')}
+🌐 IP: {i.get('ip')}
+🦠 Malware: {i.get('malware')}
+🌍 Domain: {i.get('domain')}
 
-🛠 Action:
-- Block IOC
-- Hunt in SIEM
+🧠 Intel Level: {tag}
 """)
 
     save_history(uid)
