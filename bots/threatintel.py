@@ -15,7 +15,7 @@ from modules.intel.correlation import correlate_ioc_news
 from modules.intel.prioritization import is_target_related
 from modules.intel.credentials import analyze_credential_leak
 from modules.intel.pyramid import classify_intel
-
+from modules.intel.gti import enrich_ip
 from modules.core.history import load_history, save_history, gen_id
 
 
@@ -207,28 +207,42 @@ for n in news:
 
 
 # -------------------
-# ⚠️ IOC (FILTRADO PIRÂMIDE)
+# ⚠️ IOC (GTI ENRICHED)
 # -------------------
 for i in iocs:
 
-    tag_pyramid, score = classify_intel(i)
+    ip = i.get("ip")
 
-    # 🔥 ignora base da pirâmide (IP/hash simples)
-    if score <= 1:
+    if not ip:
         continue
 
-    uid = gen_id(str(i))
+    enriched = enrich_ip(ip)
+
+    if not enriched:
+        continue
+
+    # 🔥 só alerta se realmente malicioso
+    if enriched.get("malicious", 0) < 3:
+        continue
+
+    uid = gen_id(ip)
 
     if uid in history:
         continue
 
-    send(f"""⚠️ IOC {tag_pyramid}
+    send(f"""⚠️ IOC CONFIRMED 🔥
 
-🌐 IP: {i.get('ip', 'N/A')}
-🦠 Malware: {i.get('malware', 'unknown')}
-🌍 Domain: {i.get('domain', 'N/A')}
+🌐 IP: {ip}
+☠️ Malicious: {enriched.get('malicious')}
+⚠️ Suspicious: {enriched.get('suspicious')}
 
-🧠 Intel Level: {tag_pyramid}
+🌍 Country: {enriched.get('country')}
+🏢 ASN Owner: {enriched.get('owner')}
+
+🛠 Action:
+- Block IP
+- Check logs
+- Hunt connections
 """)
 
     save_history(uid)
