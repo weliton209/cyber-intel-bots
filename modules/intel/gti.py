@@ -6,17 +6,24 @@ API_KEY = os.getenv("GTI_API_KEY")
 
 def enrich_ip(ip):
 
+    if not API_KEY:
+        return None
+
     url = f"https://www.virustotal.com/api/v3/ip_addresses/{ip}"
 
     headers = {
-        "x-apikey": "1fe15bd46f363f74d7b11aa9d1f5ddd411097662a125d3b9f4a72db579fbbad0"
+        "x-apikey": API_KEY
     }
 
     try:
-        r = requests.get(url, headers=headers, timeout=10).json()
+        r = requests.get(url, headers=headers, timeout=10)
 
-        attr = r.get("data", {}).get("attributes", {})
+        if r.status_code != 200:
+            return None
 
+        data = r.json()
+
+        attr = data.get("data", {}).get("attributes", {})
         stats = attr.get("last_analysis_stats", {})
 
         return {
